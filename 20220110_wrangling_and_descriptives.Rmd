@@ -1,0 +1,170 @@
+---
+title: "20220110_wrangling_and_descriptives"
+author: "cheungngo"
+date: "10 January 2022"
+output: html_document
+---
+
+```{r}
+library(readxl)
+adult <- read_excel("data/adult.xlsx")
+child <- read_excel("data/child.xlsx")
+oldage <- read_excel("data/oldage.xlsx")
+```
+
+### For "Documentation"
+
+```{r}
+docu = rbind(adult, child[,c(1:18,22)], oldage[,c(1:18, 22)])
+```
+
+```{r}
+names(docu)
+```
+
+```{r}
+# First tier: documented
+
+# just check out docu$documentation
+```
+
+```{r}
+length(which(docu$documentation==1)) / dim(docu)[1]
+```
+
+```{r}
+# Second tier: Adequate treatment before:
+
+docu$adequate = 0
+ind_adequate = which(docu$previous_px==1 & (docu$previous_px_se==1 | (docu$previous_px_mineffdose==1 & docu$previous_px_dur)))
+docu$adequate[ind_adequate] = 1
+```
+
+```{r}
+length(which(docu$documentation==1 | docu$adequate==1)) / dim(docu)[1]
+```
+
+```{r}
+# Third tier: miscellaneous other reasons: research, discussion with supervisor, previously treated with patent drugs
+
+docu$misc = 0
+ind_misc = which(docu$research==1 | docu$supervisor==1 | docu$previous_px_exp==1)
+docu$misc[ind_misc] = 1
+```
+
+```{r}
+length(which(docu$documentation==1 | docu$adequate==1 | docu$misc==1)) / dim(docu)[1]
+```
+
+```{r}
+# Fourth tier: prescribed by other entities
+
+docu$other = 0
+ind_other = which(docu$from!="QMH")
+docu$other[ind_other] = 1
+```
+
+```{r}
+length(which(docu$documentation==1 | docu$adequate==1 | docu$misc==1 | docu$other==1)) / dim(docu)[1]
+```
+
+##### Analysis for the "failed" entries
+
+```{r}
+ind_passed = which(docu$documentation==1 | docu$adequate==1 | docu$misc==1 | docu$other==1)
+docu$failed = 1
+docu$failed[ind_passed] = 0
+```
+
+```{r}
+table(docu$dr_code, docu$failed)
+```
+
+```{r}
+table(docu$rank, docu$failed)
+chisq.test(table(docu$rank, docu$failed))
+```
+
+```{r}
+table(docu$team, docu$failed)
+chisq.test(table(docu$team, docu$failed))
+```
+
+```{r}
+table(docu$sex, docu$failed)
+chisq.test(table(docu$sex, docu$failed))
+```
+
+```{r}
+table(docu$dx, docu$failed)
+chisq.test(table(docu$dx, docu$failed))
+
+# ASD, DEP, OCD
+```
+
+### For "Indication" (child)
+
+```{r}
+# First tier: 
+
+child$recom = 0
+ind_recom = which(child$previous_px==1 | ((child$psychosocial==1 & child$target_ss==1 & child$contraindication==1) & (child$previous_px==0)))
+child$recom[ind_recom] = 1
+```
+
+```{r}
+length(which(child$recom==1)) / dim(child)[1]
+```
+
+```{r}
+# Second tier: correct indiction
+table(child$dx)
+```
+
+```{r}
+ind_dx_1 = which(child$dx=="ASD" | child$dx=="TIC" | child$dx=="SCZ" | child$dx=="BAD")
+child$dx_1 = 0
+child$dx_1[ind_dx_1] = 1
+length(which(child$recom==1 | child$dx_1==1)) / dim(child)[1]
+```
+
+```{r}
+# Third tier: miscellaneous other reasons: research, discussion with supervisor, previously treated with antipsychotics
+
+child$misc = 0
+ind_misc = which(child$research==1 | child$supervisor==1 | child$previous_px==1)
+child$misc[ind_misc] = 1
+```
+
+```{r}
+length(which(child$recom==1 | child$dx_1==1 | child$misc==1)) / dim(child)[1]
+```
+
+```{r}
+# Fourth tier: prescribed by other entities
+
+child$other = 0
+ind_other = which(child$from!="QMH")
+child$other[ind_other] = 1
+```
+
+```{r}
+length(which(child$recom==1 | child$dx_1==1 | child$misc==1 | child$other==1)) / dim(child)[1]
+```
+
+##### Analysis for the "not indicated" entries
+
+```{r}
+ind_passed = which(child$recom==1 | child$dx_1==1 | child$misc==1 | child$other==1)
+child$non_ind = 1
+child$non_ind[ind_passed] = 0
+```
+
+```{r}
+table(child$dx, child$non_ind)
+```
+
+```{r}
+table(child$dr_code, child$non_ind)
+```
+
