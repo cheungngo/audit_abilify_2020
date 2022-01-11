@@ -22,6 +22,19 @@ docu = rbind(adult, child[,c(1:18,22)], oldage[,c(1:18, 22)])
 names(docu)
 ```
 
+### General stats
+
+```{r}
+dim(docu)[1]
+table(docu$sex)
+summary(docu$age)
+dim(adult)[1]
+dim(child)[1]
+dim(oldage)[1]
+```
+
+### Drug review
+
 ```{r}
 # First tier: documented
 
@@ -125,7 +138,11 @@ table(child$dx)
 ind_dx_1 = which(child$dx=="ASD" | child$dx=="TIC" | child$dx=="SCZ" | child$dx=="BAD")
 child$dx_1 = 0
 child$dx_1[ind_dx_1] = 1
-length(which(child$recom==1 | child$dx_1==1)) / dim(child)[1]
+
+```
+
+```{r}
+length(which(child$dx_1==1)) / dim(child)[1]
 ```
 
 ```{r}
@@ -141,6 +158,10 @@ length(which(child$recom==1 | child$dx_1==1 | child$misc==1)) / dim(child)[1]
 ```
 
 ```{r}
+length(which(child$dx_1==1 | child$misc==1)) / dim(child)[1]
+```
+
+```{r}
 # Fourth tier: prescribed by other entities
 
 child$other = 0
@@ -151,6 +172,11 @@ child$other[ind_other] = 1
 ```{r}
 length(which(child$recom==1 | child$dx_1==1 | child$misc==1 | child$other==1)) / dim(child)[1]
 ```
+
+```{r}
+length(which(child$dx_1==1 | child$misc==1 | child$other==1)) / dim(child)[1]
+```
+
 
 ##### Analysis for the "not indicated" entries
 
@@ -166,5 +192,100 @@ table(child$dx, child$non_ind)
 
 ```{r}
 table(child$dr_code, child$non_ind)
+```
+
+```{r}
+table(child$rank, child$non_ind)
+chisq.test(table(child$rank, child$non_ind))
+```
+
+```{r}
+table(child$sex, child$non_ind)
+chisq.test(table(child$sex, child$non_ind))
+```
+
+### For "Indication" (old age)
+
+```{r}
+# First tier: 
+
+oldage$recom = 0
+ind_recom = which(oldage$previous_px==1 | ((oldage$other_cause==1 & oldage$severe_ss==1 & oldage$non_pharm==1) & oldage$previous_px==0))
+oldage$recom[ind_recom] = 1
+```
+
+```{r}
+length(which(oldage$recom==1)) / dim(oldage)[1]
+```
+
+```{r}
+# Second tier: diagnosis
+
+table(oldage$dx)
+# so that all diagnoses are indicated
+```
+
+### For "Indication" (adult)
+
+```{r}
+# first tier: diagnosis
+
+table(adult$dx)
+```
+
+```{r}
+ind_dx_0 = which(adult$dx=="ANX" | adult$dx=="GAD" | adult$dx=="OCD" | adult$dx=="SA")
+adult$dx_1 = 1
+adult$dx_1[ind_dx_0] = 0
+length(which(adult$dx_1==1)) / dim(adult)[1]
+```
+
+```{r}
+# Second tier: miscellaneous other reasons: research, discussion with supervisor, previously treated with antipsychotics
+
+adult$misc = 0
+ind_misc = which(adult$research==1 | adult$supervisor==1 | adult$previous_px==1)
+adult$misc[ind_misc] = 1
+```
+
+```{r}
+length(which(adult$dx_1==1 | adult$misc==1)) / dim(adult)[1]
+```
+
+```{r}
+# Third tier:  prescribed by other entities
+
+adult$other = 0
+ind_other = which(adult$from!="QMH")
+adult$other[ind_other] = 1
+```
+
+```{r}
+length(which(adult$dx_1==1 | adult$misc==1 | adult$other==1)) / dim(adult)[1]
+```
+
+##### Analysis for the "not indicated" entries
+
+```{r}
+ind_passed = which(adult$dx_1==1 | adult$misc==1 | adult$other==1)
+adult$non_ind = 1
+adult$non_ind[ind_passed] = 0
+```
+
+```{r}
+table(adult$dx, adult$non_ind)
+```
+
+```{r}
+table(adult$dr_code, adult$non_ind)
+```
+
+```{r}
+table(adult$rank, adult$non_ind)
+```
+
+```{r}
+table(adult$sex, adult$non_ind)
+chisq.test(table(adult$sex, adult$non_ind))
 ```
 
